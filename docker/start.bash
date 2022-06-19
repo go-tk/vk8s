@@ -17,6 +17,8 @@ echo 'rm -r run db' >>run/cleanup.bash
 
 PIDS=()
 
+# ========== etcd ==========
+
 etcd \
 	--advertise-client-urls=http://${HOST_IP}:${ETCD_CLIENT_PORT} \
 	--data-dir=db \
@@ -25,6 +27,8 @@ etcd \
 	>log/etcd.log 2>&1 &
 PIDS+=(${!})
 echo "kill -9 ${!}" >>run/cleanup.bash
+
+# ========== kube-apiserver ==========
 
 kube-apiserver \
 	--etcd-servers=http://${HOST_IP}:${ETCD_CLIENT_PORT} \
@@ -47,7 +51,7 @@ echo "kill -9 ${!}" >>run/cleanup.bash
 
 N=0
 while true; do
-	if [[ $({ kubectl --kubeconfig=lib/admin.kubeconfig get services -o custom-columns=:metadata.name --no-headers || true; } | wc -l) -ge 1 ]]; then
+	if kubectl --kubeconfig=lib/admin.kubeconfig get namespaces/default -o custom-columns=:metadata.name --no-headers; then
 		break
 	fi
 	if [[ ${N} -eq 10 ]]; then
@@ -57,9 +61,13 @@ while true; do
 	N=$((N + 1))
 done
 
+# ========== kube-apiserver proxy ==========
+
 kubectl --kubeconfig=lib/admin.kubeconfig proxy --address=0.0.0.0 --port=${KUBE_APISERVER_PROXY_PORT} --accept-hosts='.*' >log/kube-apiserver-proxy.log 2>&1 &
 PIDS+=(${!})
 echo "kill -9 ${!}" >>run/cleanup.bash
+
+# ========== kube-controller-manager ==========
 
 kube-controller-manager \
 	--kubeconfig=lib/${DEBUG-kube-controller-manager}${DEBUG+proxy}.kubeconfig \
@@ -79,6 +87,21 @@ kube-controller-manager \
 PIDS+=(${!})
 echo "kill -9 ${!}" >>run/cleanup.bash
 
+CMD=(kubectl --kubeconfig=lib/admin.kubeconfig get serviceaccounts -o custom-columns=:metadata.name --no-headers -w)
+awk 'NR == 1 {
+	cmd = $0
+	cmd = "echo $$ && exec "cmd
+	cmd | getline pid
+	if ((cmd | getline) <= 0) {
+		close(cmd)
+		exit(1)
+	}
+	system("kill -9 "pid)
+	close(cmd)
+}' <<<${CMD[@]@Q}
+
+# ========== kube-scheduler ==========
+
 kube-scheduler \
 	--kubeconfig=lib/${DEBUG-kube-scheduler}${DEBUG+proxy}.kubeconfig \
 	--port=0 \
@@ -88,6 +111,8 @@ kube-scheduler \
 	>log/kube-scheduler.log 2>&1 &
 PIDS+=(${!})
 echo "kill -9 ${!}" >>run/cleanup.bash
+
+# ========== virtual-kubelet ==========
 
 for N in $(seq ${NODES}); do
 	KUBECONFIG=lib/${DEBUG-admin}${DEBUG+proxy}.kubeconfig \
@@ -107,16 +132,13 @@ done
 CMD=(kubectl --kubeconfig=lib/admin.kubeconfig get nodes -o custom-columns=:metadata.name --no-headers -w)
 awk 'NR == 1 {
 	cmd = $0
-	printf("cmd: %s\n", cmd) > "/dev/stderr"
 	cmd = "echo $$ && exec "cmd
 	cmd | getline pid
-	printf("pid: %d\n", pid) > "/dev/stderr"
 	while (1) {
 		if ((cmd | getline line) <= 0) {
 			close(cmd)
 			exit(1)
 		}
-		printf("line: %s\n", line) > "/dev/stderr"
 		lines[line]++
 		if (length(lines) == '${NODES}') {
 			system("kill -9 "pid)
