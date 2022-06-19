@@ -11,7 +11,7 @@ Setting up a virtual Kubernetes cluster inside a Docker container for integratio
 
 ```sh
 # Run vk8s in background
-docker run --name=vk8s -e TTL=300 -d --rm ghcr.io/go-tk/vk8s:v0.1.0
+docker run --name=vk8s -e TTL=300 -d --rm ghcr.io/go-tk/vk8s:v0.1.1
 
 # Ensure vk8s is ready
 docker exec vk8s ./wait-for-ready.bash
