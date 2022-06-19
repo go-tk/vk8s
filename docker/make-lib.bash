@@ -138,7 +138,7 @@ generate_kube_controller_manager_kubeconfig() {
   },
   "names": [
     {
-      "O": "system:masters"
+      "O": "system:kube-controller-manager"
     }
   ]
 }

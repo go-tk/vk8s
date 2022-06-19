@@ -73,6 +73,7 @@ kube-controller-manager \
 	--port=0 \
 	--secure-port=0 \
 	--leader-elect=false \
+	--use-service-account-credentials=true \
 	--v=0 \
 	>log/kube-controller-manager.log 2>&1 &
 PIDS+=(${!})
