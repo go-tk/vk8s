@@ -15,7 +15,7 @@ jobs:
     steps:
     - run: echo "image=ghcr.io/go-tk/vk8s:${GITHUB_REF#refs/tags/}" >>"${GITHUB_ENV}"
     - uses: actions/checkout@v2
-    - run: docker build --tag='${{ env.image }}' .
+    - run: docker build --tag='${{ env.image }}' docker
     - uses: docker/login-action@v1
       with:
         registry: ghcr.io
