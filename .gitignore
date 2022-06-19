@@ -1,0 +1,5 @@
+/docker/bin
+/docker/lib
+/docker/run
+/docker/db
+/docker/log
