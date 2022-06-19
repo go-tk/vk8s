@@ -95,8 +95,8 @@ for N in $(seq ${NODES}); do
 		APISERVER_KEY_LOCATION=lib/kubernetes.key \
 		virtual-kubelet \
 		--provider=mock \
-		--provider-config=lib/vkubelet-mock-${N}-cfg.json \
-		--nodename=vkubelet-mock-${N} \
+		--provider-config=lib/vnode-${N}-cfg.json \
+		--nodename=vnode-${N} \
 		--disable-taint \
 		>log/virtual-kubelet-${N}.log 2>&1 &
 	PIDS+=(${!})
@@ -126,7 +126,7 @@ awk 'NR == 1 {
 }' <<<${CMD[@]@Q}
 
 for N in $(seq ${NODES}); do
-	kubectl --kubeconfig=lib/admin.kubeconfig label nodes vkubelet-mock-${N} kubernetes.io/os=linux
+	kubectl --kubeconfig=lib/admin.kubeconfig label nodes vnode-${N} kubernetes.io/os=linux
 done
 
 if [[ ${TTL} -ge 1 ]]; then

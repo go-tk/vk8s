@@ -212,9 +212,9 @@ EOF
 
 generate_virtual_kubelet_configs() {
 	for N in $(seq ${NODES}); do
-		cat >vkubelet-mock-${N}-cfg.json <<EOF
+		cat >vnode-${N}-cfg.json <<EOF
 {
-  "vkubelet-mock-${N}": {
+  "vnode-${N}": {
     "cpu": "16",
     "memory": "32Gi",
     "pods": "128"
