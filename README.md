@@ -2,6 +2,10 @@
 
 Setting up a virtual Kubernetes cluster inside a Docker container for integration testing.
 
+**Note**: A virtual Kubernetes cluster consists of virtual nodes, once newly-created pods are
+assigned to these nodes, pods will immediately be reported as RUNNING status, but in reality
+no any container of pods has been created and run, this is a trick achieved by [virtual-kubelet](https://github.com/virtual-kubelet/virtual-kubelet).
+
 # Examples
 
 - [Use in Shell](#use-in-shell)
