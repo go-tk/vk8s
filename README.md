@@ -15,13 +15,13 @@ no any container of pods has been created and run, this is a trick achieved by [
 
 ```sh
 # Run vk8s in background
-docker run --name=vk8s -e TTL=300 -d --rm ghcr.io/go-tk/vk8s:v0.1.1
+docker run --name=vk8s -e TTL=300 -d --rm -p 9191:8080 ghcr.io/go-tk/vk8s:v0.1.1
 
-# Ensure vk8s is ready
+# Ensure vk8s is ready (~10s)
 docker exec vk8s ./wait-for-ready.bash
 
 # Create a pod
-docker exec -i vk8s kubectl apply -f - <<EOF
+kubectl -s http://127.0.0.1:9191 apply -f - <<EOF
 apiVersion: v1
 kind: Pod
 metadata:
@@ -33,7 +33,7 @@ spec:
 EOF
 
 # List pods
-docker exec vk8s kubectl get pods
+kubectl -s http://127.0.0.1:9191 get pods
 
 # Clean up
 docker rm -f vk8s
