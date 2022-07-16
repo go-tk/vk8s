@@ -9,29 +9,37 @@ on:
     tags:
     - v*
 jobs:
-  build_image_and_test:
-    if: startsWith(github.ref, 'refs/tags/')
+  build_and_test:
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
-    - run: echo "image=ghcr.io/go-tk/vk8s:${GITHUB_REF#refs/tags/}" >>"${GITHUB_ENV}"
     - uses: actions/checkout@v2
+    - run: echo "image=ghcr.io/${{ github.repository }}:build-$(git log -1 --date=format:'%Y%m%d%H%M%S' --format='%ad')-$(git rev-parse HEAD | cut --bytes=1-12)" >>"${GITHUB_ENV}"
     - run: docker build --tag='${{ env.image }}' docker
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.17'
+    - run: sed --regexp-extended --in-place 's|^(const image = ").*(")$|\1${{ env.image }}\2|' vk8s.go && go test ./...
     - uses: docker/login-action@v1
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '1.17'
-    - run: go test ./...
     - run: docker push '${{ env.image }}'
-  test:
-    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '1.17'
+    - run: |-
+        [[ $(
+          curl \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'Authorization: token ${{ secrets.GITHUB_TOKEN }}' \
+            -SsLf \
+            '${{ github.api_url }}/repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?check_name=build_and_test&status=completed&per_page=1' |
+          jq --raw-output '.check_runs[].conclusion'
+        ) == success ]]
     - uses: actions/checkout@v2
-    - run: go test ./...
+    - run: |-
+        echo "original_image=ghcr.io/${{ github.repository }}:build-$(git log -1 --date=format:'%Y%m%d%H%M%S' --format='%ad')-$(git rev-parse HEAD | cut --bytes=1-12)" >>"${GITHUB_ENV}"
+        echo "image=ghcr.io/${{ github.repository }}:${GITHUB_REF#refs/tags/}" >>"${GITHUB_ENV}"
