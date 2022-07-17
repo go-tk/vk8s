@@ -38,6 +38,13 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
+    - run: >-
+        curl
+        -H 'Accept: application/vnd.github+json'
+        -H 'Authorization: token ${{ secrets.GITHUB_TOKEN }}'
+        -SsLf '${{ github.api_url }}/repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?check_name=build_and_test'
+        | jq --raw-output '.check_runs[-1].conclusion'
+        | grep --line-regexp --fixed-strings success
     - uses: actions/checkout@v2
     - run: |-
         echo "base_image=ghcr.io/${{ github.repository }}:build-$(git log -1 --date=format:'%Y%m%d%H%M%S' --format='%ad')-$(git rev-parse HEAD | cut --bytes=1-12)" >>"${GITHUB_ENV}"
@@ -49,13 +56,11 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - run: >-
         docker pull '${{ env.base_image }}'
-        &&
-        docker build
+        && docker build
         --tag='${{ env.image }}'
         --label=org.opencontainers.image.created="$(date --rfc-3339=date)"
         --label=org.opencontainers.image.ref.name='${{ env.image }}'
         --label=org.opencontainers.image.base.digest="$(docker image inspect --format='{{index .RepoDigests 0}}' '${{ env.base_image }}' | cut --delimiter=@ --fields=2)"
         --label=org.opencontainers.image.base.name='${{ env.base_image }}'
         - <<<'FROM ${{ env.base_image }}'
-        &&
-        docker push '${{ env.image }}'
+        && docker push '${{ env.image }}'
