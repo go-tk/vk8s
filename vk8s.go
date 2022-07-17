@@ -14,7 +14,7 @@ import (
 	"github.com/docker/docker/client"
 )
 
-const image = "ghcr.io/go-tk/vk8s:v0.2.0"
+const image = "ghcr.io/go-tk/vk8s:v0.2.1"
 
 // SetUp sets up a virtual Kubernetes cluster and returns the data of kube-config to access it.
 func SetUp(ctx context.Context, timeToLive time.Duration, t *testing.T) []byte {

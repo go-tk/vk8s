@@ -15,7 +15,7 @@ no any container of pods has been created and run, this is a trick achieved by [
 
 ```sh
 # Run vk8s in background
-docker run --name=vk8s -e TTL=300 -d --rm -p 9191:8080 ghcr.io/go-tk/vk8s:v0.2.0
+docker run --name=vk8s -e TTL=300 -d --rm -p 9191:8080 ghcr.io/go-tk/vk8s:v0.2.1
 
 # Ensure vk8s is ready (~15s)
 docker exec vk8s ./wait-for-ready.bash
